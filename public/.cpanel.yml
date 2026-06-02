@@ -1,0 +1,5 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/spfituzk/ventoriaglobal.com/
+    - /bin/cp * $DEPLOYPATH
