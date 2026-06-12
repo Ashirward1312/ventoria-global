@@ -1,1139 +1,724 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
+
+import CountUpObj from "react-countup";
+const CountUp = CountUpObj.default || CountUpObj;
+
 import {
-  TrendingUp,
-  BarChart3,
-  Target,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  ComposedChart,
+  Line,
+} from "recharts";
+
+import {
   ArrowRight,
-  Stethoscope,
-  Home,
-  Building2,
-  MonitorSmartphone,
-  Activity,
+  Zap,
+  TrendingUp,
   Users,
-  BadgeDollarSign,
-  Trophy,
-  AlertCircle,
-  Lightbulb,
-  ChevronRight,
-  Rocket,
+  Building,
+  MousePointerClick,
+  CalendarDays,
+  Eye,
+  Sparkles,
+  ChevronDown,
+  Activity,
   CheckCircle2,
-  Briefcase,
   Star,
+  Award,
+  Phone,
 } from "lucide-react";
-import CtaSection from "../../Components/CtaSection";
 
-import CountUp from "../../Components/CountUp";
+import irefLogo from "../Img/iref logo.png";
+import vbLogo from "../Img/vbtower logo.jpg";
+import raghavLogo from "../Img/raghav logo.png";
+import maheshLogo from "../Img/maheshventures logo.png";
+import aarogyaLogo from "../Img/aarogya logo.png";
 
-export default function CaseStudies() {
-  const [visibleCards, setVisibleCards] = useState([]);
-  const [headerVisible, setHeaderVisible] = useState(false);
-  const [topStatsVisible, setTopStatsVisible] = useState(false);
-  const [ctaVisible, setCtaVisible] = useState(false);
+/* ─── Tooltip (LIGHT theme) ─── */
+const TT = {
+  borderRadius: "14px",
+  border: "1px solid rgba(148,163,184,0.35)",
+  boxShadow: "0 24px 70px rgba(15,23,42,0.12)",
+  background: "rgba(255,255,255,0.98)",
+  color: "#0f172a",
+  fontSize: "0.8rem",
+  backdropFilter: "blur(10px)",
+};
+const TICK = { fill: "#64748b", fontSize: 11 };
 
-  const cardRefs = useRef([]);
-  const headerRef = useRef(null);
-  const topStatsRef = useRef(null);
-  const ctaRef = useRef(null);
+/* ─── Framer FadeIn ─── */
+const FadeIn = ({ children, delay = 0, y = 18, className = "" }) => (
+  <motion.div
+    initial={{ opacity: 0, y }}
+    whileInView={{ opacity: 1, y: 0 }}
+    viewport={{ once: true, amount: 0.12 }}
+    transition={{ duration: 0.6, delay, ease: [0.22, 1, 0.36, 1] }}
+    className={className}
+  >
+    {children}
+  </motion.div>
+);
 
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            if (entry.target === headerRef.current) setHeaderVisible(true);
-            if (entry.target === topStatsRef.current) setTopStatsVisible(true);
-            if (entry.target === ctaRef.current) setCtaVisible(true);
+/* ─── Gradient defs for charts ─── */
+const Defs = () => (
+  <svg width="0" height="0" style={{ position: "absolute" }}>
+    <defs>
+      {[
+        ["sky", "#38BDF8", "#0EA5E9"],
+        ["emerald", "#34D399", "#10B981"],
+        ["violet", "#A78BFA", "#8B5CF6"],
+        ["amber", "#FCD34D", "#F59E0B"],
+        ["rose", "#FB7185", "#F43F5E"],
+      ].map(([id, c1, c2]) => (
+        <React.Fragment key={id}>
+          <linearGradient id={`bar-${id}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={c1} />
+            <stop offset="100%" stopColor={c2} />
+          </linearGradient>
+          <linearGradient id={`area-${id}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={c2} stopOpacity={0.22} />
+            <stop offset="100%" stopColor={c2} stopOpacity={0.02} />
+          </linearGradient>
+        </React.Fragment>
+      ))}
+    </defs>
+  </svg>
+);
 
-            const cardIndex = cardRefs.current.indexOf(entry.target);
-            if (cardIndex !== -1) {
-              setVisibleCards((prev) =>
-                prev.includes(cardIndex) ? prev : [...prev, cardIndex]
-              );
-            }
-          }
-        });
-      },
-      { threshold: 0.12 }
-    );
+/* ─── Stat pill (LIGHT) ─── */
+function Stat({ icon: Icon, label, value, accent }) {
+  return (
+    <div
+      className="relative flex flex-col items-center justify-center rounded-2xl p-4 text-center overflow-hidden border bg-white min-w-0"
+      style={{ borderColor: `${accent}25` }}
+    >
+      <div
+        className="absolute inset-0 opacity-[0.06]"
+        style={{ background: `radial-gradient(circle at 50% 0%, ${accent}, transparent 65%)` }}
+      />
+      <div className="relative z-10 min-w-0">
+        <div className="flex items-center justify-center gap-1 mb-2" style={{ color: accent }}>
+          <Icon className="h-3.5 w-3.5" />
+          <span className="text-[11px] font-medium tracking-[0.08em] opacity-80 truncate">
+            {label}
+          </span>
+        </div>
+        <div className="text-[20px] font-bold text-slate-900 leading-none break-words">
+          {value}
+        </div>
+      </div>
+    </div>
+  );
+}
 
-    if (headerRef.current) observer.observe(headerRef.current);
-    if (topStatsRef.current) observer.observe(topStatsRef.current);
-    if (ctaRef.current) observer.observe(ctaRef.current);
-    cardRefs.current.forEach((ref) => ref && observer.observe(ref));
+/* ─── Info block (LIGHT) ─── */
+function InfoBlock({ icon: Icon, title, accent, children }) {
+  return (
+    <div className="rounded-2xl p-6 border border-slate-200 bg-white overflow-hidden shadow-[0_16px_50px_rgba(15,23,42,0.06)]">
+      <h4 className="flex items-center gap-2.5 text-[14px] font-medium text-slate-900 mb-4 pb-3 border-b border-slate-200">
+        <span
+          className="flex h-8 w-8 items-center justify-center rounded-xl flex-shrink-0"
+          style={{ background: `${accent}16` }}
+        >
+          <Icon className="h-4 w-4" style={{ color: accent }} />
+        </span>
+        <span className="truncate">{title}</span>
+      </h4>
+      {children}
+    </div>
+  );
+}
 
-    return () => observer.disconnect();
-  }, []);
+/* ─── Result tag (LIGHT) ─── */
+const ResultTag = ({ text }) => (
+  <div className="flex items-start gap-2.5 py-1.5">
+    <CheckCircle2 className="h-4 w-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+    <span className="text-[14px] text-slate-700 leading-[1.75] break-words">{text}</span>
+  </div>
+);
 
-  const caseStudies = [
-    {
-      id: "01",
-      industry: "Healthcare",
-      business: "Dental Clinic",
-      icon: Stethoscope,
-      accentColor: "#0FA3A3",
-      accentLight: "rgba(15,163,163,0.08)",
-      accentSoft: "rgba(15,163,163,0.14)",
-      gradient: "linear-gradient(135deg, #0FA3A3 0%, #14B8A6 100%)",
-      challenge:
-        "The clinic had a strong reputation offline but struggled to rank in local search and convert website visitors into consistent appointment enquiries.",
-      solution:
-        "We implemented a local SEO strategy with service-focused landing pages, Google Business Profile optimisation, technical fixes and high-intent keyword targeting.",
-      stats: [
-        { icon: TrendingUp, value: "180%+", label: "Organic Traffic" },
-        { icon: Users, value: "95%+", label: "Enquiry Growth" },
-        { icon: Target, value: "Top 3", label: "Local Rankings" },
-      ],
-      tags: ["Local SEO", "GBP Optimisation", "Content Strategy"],
-    },
-    {
-      id: "02",
-      industry: "Services",
-      business: "Home Services Company",
-      icon: Home,
-      accentColor: "#D4A437",
-      accentLight: "rgba(212,164,55,0.08)",
-      accentSoft: "rgba(212,164,55,0.14)",
-      gradient: "linear-gradient(135deg, #D4A437 0%, #F59E0B 100%)",
-      challenge:
-        "The business offered multiple services but lacked a clear digital funnel, resulting in weak local visibility and low-quality lead generation.",
-      solution:
-        "We redesigned the website structure, improved UX, created location-based service pages and strengthened enquiry paths with conversion-focused CTAs.",
-      stats: [
-        { icon: Users, value: "3X", label: "Lead Enquiries" },
-        { icon: Activity, value: "68%", label: "Conv. Rate" },
-        { icon: Target, value: "Local", label: "Search Boost" },
-      ],
-      tags: ["Web Redesign", "Lead Generation", "UX Optimisation"],
-    },
-    {
-      id: "03",
-      industry: "Property",
-      business: "Australian Real Estate Agency",
-      icon: Building2,
-      accentColor: "#6366F1",
-      accentLight: "rgba(99,102,241,0.08)",
-      accentSoft: "rgba(99,102,241,0.14)",
-      gradient: "linear-gradient(135deg, #6366F1 0%, #818CF8 100%)",
-      challenge:
-        "The agency needed a more predictable lead generation system, but paid campaigns were underperforming due to weak landing pages and poor targeting consistency.",
-      solution:
-        "We built a conversion-focused paid funnel with better targeting, improved landing pages, stronger form flow and retargeting to capture warmer prospects.",
-      stats: [
-        { icon: BadgeDollarSign, value: "250%+", label: "Ad ROI" },
-        { icon: Users, value: "Qualified", label: "Property Leads" },
-        { icon: BarChart3, value: "45%", label: "Lower CPL" },
-      ],
-      tags: ["Paid Ads", "Landing Pages", "Retargeting"],
-    },
-    {
-      id: "04",
-      industry: "Technology",
-      business: "Business Website Transformation",
-      icon: MonitorSmartphone,
-      accentColor: "#EC4899",
-      accentLight: "rgba(236,72,153,0.08)",
-      accentSoft: "rgba(236,72,153,0.14)",
-      gradient: "linear-gradient(135deg, #EC4899 0%, #F472B6 100%)",
-      challenge:
-        "The client needed a premium website that loaded faster, built stronger trust and generated more enquiries without relying only on paid traffic.",
-      solution:
-        "We delivered a modern responsive website with clear messaging, better performance, stronger visual hierarchy and a conversion-focused structure.",
-      stats: [
-        { icon: MonitorSmartphone, value: "Premium", label: "Brand Feel" },
-        { icon: TrendingUp, value: "2X", label: "Page Speed" },
-        { icon: Target, value: "Higher", label: "Conversions" },
-      ],
-      tags: ["Web Development", "Performance", "SEO Ready"],
-    },
-  ];
+/* ─── Case card config ─── */
+const CASES = [
+  {
+    id: "iref",
+    logo: irefLogo,
+    name: "IREF – Institute of Real Estate & Finance",
+    tag: "Education & Finance",
+    accent: "#2563EB",
+    accentDark: "#1D4ED8",
+    badgeBg: "bg-blue-600/10 text-blue-700 border-blue-600/20",
+    results: [
+      "200+ verified leads generated in 30 days",
+      "High-quality admissions across all programs",
+      "Improved brand visibility citywide",
+    ],
+    stats: [
+      { icon: Users, label: "Leads", value: null, countEnd: 250, suffix: "+" },
+      { icon: CalendarDays, label: "Duration", value: "30 Days" },
+      { icon: MousePointerClick, label: "Conv. Rate", value: null, countEnd: 10, suffix: "%+" },
+    ],
+    did: [
+      "Meta Ads – Lead Form & Conversion Campaigns",
+      "High-Quality Lead Generation Strategy",
+      "Social Media Marketing (Facebook + Instagram)",
+      "New Website Design + Pixel Tracking",
+      "AI-Powered Audience Targeting & Optimization",
+      "Branding & Full Marketing Strategy",
+      "Telecalling for Lead Verification",
+      "Strategic Webinar Arrangement",
+    ],
+    process: [
+      "Competitive Analysis + Audience Research",
+      "Website & Landing Page Setup",
+      "Meta Campaign Setup & Launch",
+      "Influencer Marketing Campaign",
+      "Monthly Optimization & Reporting",
+    ],
+    chartType: "bar",
+    chartData: [
+      { label: "Target", value: 200 },
+      { label: "Achieved", value: 250 },
+    ],
+    chartKey: "value",
+    chartLabel: "Leads Delivered",
+  },
+  {
+    id: "vb",
+    logo: vbLogo,
+    name: "VB Tower – Commercial Complex",
+    tag: "Real Estate",
+    accent: "#10B981",
+    accentDark: "#059669",
+    badgeBg: "bg-emerald-600/10 text-emerald-700 border-emerald-600/20",
+    results: [
+      "High-quality commercial property enquiries delivered",
+      "Stronger site visits and bookings recorded",
+      "Better brand visibility and investor trust built",
+    ],
+    stats: [
+      { icon: Building, label: "Outcome", value: "Site Visits" },
+      { icon: Activity, label: "Status", value: "Growing" },
+      { icon: MousePointerClick, label: "Conv.", value: "2–3%" },
+    ],
+    did: [
+      "Meta Ads (Lead Generation + Messages)",
+      "Outdoor Hoardings & Society Branding",
+      "Full Branding & Marketing Strategy",
+      "Influencer Marketing Campaign",
+      "Telecalling Support for Verification",
+    ],
+    process: [
+      "Property Photos, Videos & Brochure Design",
+      "Lead Generation Campaign Setup",
+      "Hyperlocal Targeting for Investors",
+      "Site-Visit Push via Reminders & Follow-Ups",
+      "Regular Optimization + Broker Coordination",
+    ],
+    chartType: "area",
+    chartData: [
+      { label: "Wk 1", value: 5 },
+      { label: "Wk 2", value: 18 },
+      { label: "Wk 3", value: 32 },
+      { label: "Wk 4", value: 48 },
+    ],
+    chartKey: "value",
+    chartLabel: "Site Visits Per Week",
+  },
+  {
+    id: "raghav",
+    logo: raghavLogo,
+    name: "Raghav Public School",
+    tag: "Education",
+    accent: "#7C3AED",
+    accentDark: "#6D28D9",
+    badgeBg: "bg-violet-600/10 text-violet-700 border-violet-600/20",
+    results: [
+      "Strong and professional digital presence established",
+      "Significant increase in admission inquiries",
+      "Improved local search visibility (Top of Google SERP)",
+      "Increased parent trust through professional branding",
+    ],
+    stats: [
+      { icon: Eye, label: "Video Views", value: null, countEnd: 300, suffix: "K+" },
+      { icon: Users, label: "Leads", value: null, countEnd: 200, suffix: "+" },
+      { icon: CalendarDays, label: "Duration", value: "3 Months" },
+    ],
+    did: [
+      "Strategic Digital Marketing Planning",
+      "Targeted Lead Generation Campaigns via Meta",
+      "SEO & Google Profile Optimization",
+      "Social Media Marketing — Instagram & Facebook",
+      "Professional Photoshoot & Video Production",
+      "Creative Content (Reels, Carousels, Promo Videos)",
+      "Brand Building & Online Presence Enhancement",
+    ],
+    process: [
+      "Brand Identity & Digital Audit",
+      "Meta Campaign Launch",
+      "SEO & Local Search Optimization",
+      "Video & Reel Production",
+      "Performance Monitoring & Growth Reporting",
+    ],
+    chartType: "composed",
+    chartData: [
+      { label: "Mo 1", value: 75 },
+      { label: "Mo 2", value: 185 },
+      { label: "Mo 3", value: 300 },
+    ],
+    chartKey: "value",
+    chartLabel: "Video Views (Thousands)",
+  },
+  {
+    id: "mahesh",
+    logo: maheshLogo,
+    name: "Mahesh Ventures",
+    tag: "Real Estate",
+    accent: "#F59E0B",
+    accentDark: "#D97706",
+    badgeBg: "bg-amber-600/10 text-amber-700 border-amber-600/20",
+    results: [
+      "Strong and professional digital presence established",
+      "Consistent generation of qualified property inquiries",
+      "Centralized lead management through a custom CRM",
+      "Higher engagement across social media platforms",
+    ],
+    stats: [
+      { icon: Eye, label: "Video Views", value: null, countEnd: 300, suffix: "K+" },
+      { icon: Users, label: "Leads", value: null, countEnd: 200, suffix: "+" },
+      { icon: Building, label: "Properties", value: null, countEnd: 20, suffix: "+" },
+    ],
+    did: [
+      "Strategic Social Media Management & Content Planning",
+      "Targeted Lead Generation via Meta Ads",
+      "Property-Focused Creative Design & Content",
+      "Reels, Property Walkthroughs & Video Marketing",
+      "Brand Positioning & Online Presence Enhancement",
+      "Custom CRM Development for Lead Management",
+      "Lead Tracking, Follow-up & Sales Pipeline Setup",
+    ],
+    process: [
+      "Market Research & Audience Mapping",
+      "Brand & Visual Identity Setup",
+      "Meta Lead Gen Campaign Launch",
+      "CRM Integration & Lead Tracking",
+      "Continuous Optimization & Reporting",
+    ],
+    chartType: "area",
+    chartData: [
+      { label: "Mo 1", value: 40 },
+      { label: "Mo 2", value: 90 },
+      { label: "Mo 3", value: 160 },
+      { label: "Mo 4", value: 200 },
+    ],
+    chartKey: "value",
+    chartLabel: "Qualified Leads Per Month",
+  },
+  {
+    id: "aarogya",
+    logo: aarogyaLogo,
+    name: "Aarogya Hospital",
+    tag: "Healthcare",
+    accent: "#F43F5E",
+    accentDark: "#E11D48",
+    badgeBg: "bg-rose-600/10 text-rose-700 border-rose-600/20",
+    results: [
+      "Significantly increased monthly patient inquiries and footfall",
+      "Enhanced hospital reputation through online visibility",
+      "Achieved top ranking in local searches for key specialties",
+      "Consistent growth in community engagement and awareness",
+    ],
+    stats: [
+      { icon: Users, label: "Monthly Inq.", value: null, countEnd: 200, suffix: "+" },
+      { icon: Activity, label: "Traffic", value: null, countEnd: 10, suffix: "K+" },
+      { icon: CalendarDays, label: "Duration", value: "4 Months" },
+    ],
+    did: [
+      "Robust digital marketing strategy for healthcare",
+      "Targeted Meta Ads to reach local patients",
+      "Google My Business profile management",
+      "Educational healthcare content & awareness videos",
+      "Lead follow-up and appointment scheduling optimization",
+    ],
+    process: [
+      "Healthcare Digital Audit",
+      "Local SEO & GMB Setup",
+      "Meta Campaign for Patient Inquiries",
+      "Content & Awareness Video Creation",
+      "Lead Nurturing & Follow-up Optimization",
+    ],
+    chartType: "area",
+    chartData: [
+      { label: "Mo 1", value: 40 },
+      { label: "Mo 2", value: 90 },
+      { label: "Mo 3", value: 150 },
+      { label: "Mo 4", value: 200 },
+    ],
+    chartKey: "value",
+    chartLabel: "Patient Inquiries Per Month",
+  },
+];
 
-  const topStats = [
-    { value: "50+", label: "Projects Delivered", icon: Briefcase, color: "#0FA3A3" },
-    { value: "180%+", label: "Traffic Growth", icon: TrendingUp, color: "#D4A437" },
-    { value: "3X", label: "Lead Increase", icon: Users, color: "#0FA3A3" },
-    { value: "99%", label: "Client Satisfaction", icon: Star, color: "#D4A437" },
-  ];
+/* ─── Mini chart renderer ─── */
+function MiniChart({ cs }) {
+  const { chartType, chartData, chartKey, chartLabel, accent, accentDark, id } = cs;
+  const areaId = `area-chart-${id}`;
+
+  const barFill = `url(#bar-${id === "iref" ? "sky" : id === "vb" ? "emerald" : id === "raghav" ? "violet" : id === "mahesh" ? "amber" : "rose"
+    })`;
 
   return (
-    <section className="cs-premium">
-      <style>{`
-        .cs-premium {
-          position: relative;
-          overflow: hidden;
-          background:
-            radial-gradient(circle at top left, rgba(15,163,163,0.07), transparent 26%),
-            radial-gradient(circle at bottom right, rgba(212,164,55,0.06), transparent 24%),
-            linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
-          padding: 96px 0 110px;
-          font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
-        }
-
-        .cs-grid-pattern {
-          position: absolute;
-          inset: 0;
-          pointer-events: none;
-          background-image:
-            linear-gradient(to right, rgba(15,42,68,0.035) 1px, transparent 1px),
-            linear-gradient(to bottom, rgba(15,42,68,0.035) 1px, transparent 1px);
-          background-size: 48px 48px;
-          mask-image: radial-gradient(circle at center, black 30%, transparent 85%);
-        }
-
-        .cs-orb-1,
-        .cs-orb-2,
-        .cs-orb-3 {
-          position: absolute;
-          border-radius: 999px;
-          filter: blur(80px);
-          pointer-events: none;
-        }
-
-        .cs-orb-1 {
-          top: -120px;
-          left: -100px;
-          width: 420px;
-          height: 420px;
-          background: rgba(15,163,163,0.12);
-        }
-
-        .cs-orb-2 {
-          bottom: -120px;
-          right: -80px;
-          width: 360px;
-          height: 360px;
-          background: rgba(212,164,55,0.12);
-        }
-
-        .cs-orb-3 {
-          top: 30%;
-          left: 50%;
-          transform: translateX(-50%);
-          width: 580px;
-          height: 240px;
-          background: rgba(99,102,241,0.08);
-        }
-
-        .cs-wrap {
-          position: relative;
-          z-index: 2;
-          max-width: 1280px;
-          margin: 0 auto;
-          padding: 0 24px;
-        }
-
-        .cs-header {
-          max-width: 840px;
-          margin: 0 auto 34px;
-          text-align: center;
-          opacity: 0;
-          transform: translateY(28px);
-          transition: all 0.9s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .cs-header.visible {
-          opacity: 1;
-          transform: translateY(0);
-        }
-
-        .cs-badge {
-          display: inline-flex;
-          align-items: center;
-          gap: 9px;
-          padding: 10px 20px;
-          border-radius: 999px;
-          background: rgba(255,255,255,0.92);
-          border: 1px solid rgba(15,163,163,0.16);
-          box-shadow: 0 10px 30px rgba(15,42,68,0.05);
-          color: #0FA3A3;
-          font-size: 10px;
-          font-weight: 700;
-          letter-spacing: 0.18em;
-          text-transform: uppercase;
-          margin-bottom: 24px;
-          backdrop-filter: blur(12px);
-        }
-
-        .cs-badge svg {
-          width: 14px;
-          height: 14px;
-          color: #D4A437;
-        }
-
-        .cs-header h2 {
-          margin: 0 0 18px;
-          font-size: clamp(2rem, 5vw, 3.4rem);
-          line-height: 1.08;
-          letter-spacing: -0.03em;
-          font-weight: 700;
-          color: #0F2A44;
-        }
-
-        .cs-header h2 span {
-          display: block;
-          margin-top: 4px;
-          background: linear-gradient(135deg, #0FA3A3 0%, #22c7c7 35%, #D4A437 75%, #f59e0b 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-        }
-
-        .cs-header p {
-          margin: 0 auto;
-          max-width: 700px;
-          color: #64748B;
-          font-size: 15px;
-          line-height: 1.85;
-          font-weight: 400;
-        }
-
-        .cs-header p strong {
-          font-weight: 600;
-          color: #475569;
-        }
-
-        .cs-top-stats {
-          display: grid;
-          grid-template-columns: repeat(4, 1fr);
-          gap: 16px;
-          max-width: 980px;
-          margin: 0 auto 60px;
-        }
-
-        .cs-top-stat {
-          padding: 24px 20px;
-          border-radius: 24px;
-          background: rgba(255, 255, 255, 0.85);
-          backdrop-filter: blur(12px);
-          border: 1px solid rgba(15, 42, 68, 0.08);
-          box-shadow: 0 10px 40px rgba(15, 23, 42, 0.04);
-          text-align: center;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 12px;
-          transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .cs-top-stat:hover {
-          transform: translateY(-6px);
-          background: #fff;
-          border-color: rgba(15, 163, 163, 0.2);
-          box-shadow: 0 20px 50px rgba(15, 23, 42, 0.1);
-        }
-
-        .cs-top-stat-icon {
-          width: 44px;
-          height: 44px;
-          border-radius: 12px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          margin-bottom: 4px;
-        }
-
-        .cs-top-stat-icon svg {
-          width: 20px;
-          height: 20px;
-        }
-
-        .cs-top-stat strong {
-          display: block;
-          color: #0F2A44;
-          font-size: clamp(24px, 3vw, 32px);
-          line-height: 1;
-          font-weight: 800;
-          letter-spacing: -0.03em;
-        }
-
-        .cs-top-stat span {
-          display: block;
-          color: #64748B;
-          font-size: 11px;
-          font-weight: 600;
-          letter-spacing: 0.05em;
-          text-transform: uppercase;
-        }
-
-        .cs-grid {
-          display: grid;
-          gap: 28px;
-          grid-template-columns: 1fr;
-        }
-
-        @media (min-width: 1100px) {
-          .cs-grid {
-            grid-template-columns: repeat(2, 1fr);
-          }
-        }
-
-        .cs-card {
-          position: relative;
-          overflow: hidden;
-          border-radius: 28px;
-          background: rgba(255,255,255,0.95);
-          border: 1px solid rgba(15,23,42,0.06);
-          box-shadow:
-            0 14px 34px rgba(15,23,42,0.05),
-            0 1px 0 rgba(255,255,255,0.7) inset;
-          opacity: 0;
-          transform: translateY(42px) scale(0.985);
-          transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .cs-card.visible {
-          opacity: 1;
-          transform: translateY(0) scale(1);
-        }
-
-        .cs-card:hover {
-          transform: translateY(-6px);
-          box-shadow:
-            0 22px 54px rgba(15,23,42,0.08),
-            0 1px 0 rgba(255,255,255,0.9) inset;
-        }
-
-        .cs-card-line {
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          height: 3px;
-        }
-
-        .cs-card-glow {
-          position: absolute;
-          top: -40px;
-          right: -30px;
-          width: 220px;
-          height: 220px;
-          border-radius: 50%;
-          filter: blur(70px);
-          opacity: 0.5;
-          transition: all 0.45s ease;
-          pointer-events: none;
-        }
-
-        .cs-card:hover .cs-card-glow {
-          transform: scale(1.12);
-          opacity: 0.75;
-        }
-
-        .cs-card-inner {
-          position: relative;
-          z-index: 2;
-          padding: 32px 28px 28px;
-        }
-
-        .cs-card-id {
-          position: absolute;
-          top: 22px;
-          right: 24px;
-          font-size: 54px;
-          font-weight: 700;
-          line-height: 1;
-          letter-spacing: -0.04em;
-          color: rgba(15,23,42,0.035);
-          user-select: none;
-          pointer-events: none;
-        }
-
-        .cs-top {
-          display: flex;
-          align-items: flex-start;
-          gap: 16px;
-          margin-bottom: 20px;
-        }
-
-        .cs-icon-box {
-          width: 58px;
-          height: 58px;
-          border-radius: 18px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
-          box-shadow: 0 12px 26px rgba(15,23,42,0.04);
-          transition: all 0.35s ease;
-        }
-
-        .cs-card:hover .cs-icon-box {
-          transform: scale(1.04) rotate(-3deg);
-        }
-
-        .cs-icon-box svg {
-          width: 25px;
-          height: 25px;
-        }
-
-        .cs-meta {
-          flex: 1;
-          min-width: 0;
-          padding-top: 2px;
-        }
-
-        .cs-industry {
-          display: inline-flex;
-          align-items: center;
-          gap: 7px;
-          padding: 6px 12px;
-          border-radius: 999px;
-          font-size: 10px;
-          font-weight: 600;
-          letter-spacing: 0.14em;
-          text-transform: uppercase;
-          margin-bottom: 10px;
-        }
-
-        .cs-industry-dot {
-          width: 6px;
-          height: 6px;
-          border-radius: 50%;
-        }
-
-        .cs-title {
-          margin: 0;
-          color: #0F2A44;
-          font-size: 22px;
-          line-height: 1.22;
-          font-weight: 700;
-          letter-spacing: -0.02em;
-        }
-
-        .cs-tags {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 8px;
-          margin: 0 0 22px;
-        }
-
-        .cs-tag {
-          padding: 6px 12px;
-          border-radius: 999px;
-          background: rgba(15,23,42,0.03);
-          border: 1px solid rgba(15,23,42,0.05);
-          color: #64748B;
-          font-size: 10px;
-          font-weight: 600;
-          letter-spacing: 0.02em;
-        }
-
-        .cs-block {
-          margin-bottom: 18px;
-        }
-
-        .cs-label {
-          display: flex;
-          align-items: center;
-          gap: 9px;
-          margin-bottom: 9px;
-        }
-
-        .cs-label-box {
-          width: 28px;
-          height: 28px;
-          border-radius: 9px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
-        }
-
-        .cs-label-box svg {
-          width: 14px;
-          height: 14px;
-        }
-
-        .cs-label span {
-          color: #94A3B8;
-          font-size: 10px;
-          font-weight: 700;
-          letter-spacing: 0.14em;
-          text-transform: uppercase;
-        }
-
-        .cs-text {
-          margin: 0;
-          padding-left: 37px;
-          color: #64748B;
-          font-size: 13.5px;
-          line-height: 1.85;
-          font-weight: 400;
-        }
-
-        .cs-divider {
-          height: 1px;
-          margin: 22px 0 18px;
-          background: linear-gradient(90deg, transparent, rgba(15,23,42,0.08), transparent);
-        }
-
-        .cs-results-head {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 12px;
-          margin-bottom: 14px;
-          flex-wrap: wrap;
-        }
-
-        .cs-results-head-left {
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-        }
-
-        .cs-results-head-left svg {
-          width: 15px;
-          height: 15px;
-          color: #94A3B8;
-        }
-
-        .cs-results-head-left span {
-          color: #94A3B8;
-          font-size: 10px;
-          font-weight: 700;
-          letter-spacing: 0.14em;
-          text-transform: uppercase;
-        }
-
-        .cs-results-chip {
-          padding: 6px 10px;
-          border-radius: 999px;
-          background: rgba(34,197,94,0.08);
-          color: #16A34A;
-          font-size: 9px;
-          font-weight: 700;
-          letter-spacing: 0.08em;
-          text-transform: uppercase;
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-        }
-
-        .cs-results-chip svg {
-          width: 12px;
-          height: 12px;
-        }
-
-        .cs-stats {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 12px;
-        }
-
-        .cs-stat {
-          position: relative;
-          overflow: hidden;
-          text-align: center;
-          border-radius: 18px;
-          border: 1px solid rgba(15,23,42,0.05);
-          background: linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(248,250,252,1) 100%);
-          padding: 16px 10px 14px;
-          transition: all 0.35s ease;
-          box-shadow: 0 6px 18px rgba(15,23,42,0.03);
-        }
-
-        .cs-card:hover .cs-stat {
-          transform: translateY(-2px);
-          box-shadow: 0 12px 24px rgba(15,23,42,0.06);
-        }
-
-        .cs-stat-icon {
-          width: 38px;
-          height: 38px;
-          border-radius: 12px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          margin: 0 auto 10px;
-          transition: transform 0.3s ease;
-        }
-
-        .cs-card:hover .cs-stat-icon {
-          transform: scale(1.06);
-        }
-
-        .cs-stat-icon svg {
-          width: 17px;
-          height: 17px;
-        }
-
-        .cs-stat-value {
-          display: block;
-          color: #0F2A44;
-          font-size: 17px;
-          font-weight: 700;
-          line-height: 1.1;
-          letter-spacing: -0.02em;
-          margin-bottom: 4px;
-        }
-
-        .cs-stat-label {
-          display: block;
-          color: #94A3B8;
-          font-size: 9px;
-          font-weight: 600;
-          line-height: 1.35;
-          letter-spacing: 0.1em;
-          text-transform: uppercase;
-        }
-
-        .cs-card-bar {
-          height: 4px;
-          width: 50px;
-          border-radius: 999px;
-          margin-top: 22px;
-          transition: width 0.45s ease;
-        }
-
-        .cs-card:hover .cs-card-bar {
-          width: 92px;
-        }
-
-        .cs-cta {
-          margin-top: 74px;
-          opacity: 0;
-          transform: translateY(34px);
-          transition: all 0.9s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .cs-cta.visible {
-          opacity: 1;
-          transform: translateY(0);
-        }
-
-        .cs-cta-box {
-          position: relative;
-          overflow: hidden;
-          border-radius: 30px;
-          background: linear-gradient(135deg, #0F2A44 0%, #153756 40%, #0b2034 100%);
-          padding: 54px 32px;
-          border: 1px solid rgba(255,255,255,0.08);
-          text-align: center;
-          box-shadow: 0 26px 70px rgba(15,42,68,0.18);
-        }
-
-        .cs-cta-box::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: 50%;
-          transform: translateX(-50%);
-          width: 44%;
-          height: 1px;
-          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
-        }
-
-        .cs-cta-box::after {
-          content: '';
-          position: absolute;
-          inset: auto auto -140px 50%;
-          transform: translateX(-50%);
-          width: 640px;
-          height: 320px;
-          background: radial-gradient(ellipse, rgba(15,163,163,0.10) 0%, transparent 70%);
-          pointer-events: none;
-        }
-
-        .cs-cta-orb-a,
-        .cs-cta-orb-b {
-          position: absolute;
-          border-radius: 50%;
-          filter: blur(60px);
-          pointer-events: none;
-        }
-
-        .cs-cta-orb-a {
-          top: -50px;
-          left: -20px;
-          width: 200px;
-          height: 200px;
-          background: rgba(15,163,163,0.10);
-        }
-
-        .cs-cta-orb-b {
-          right: -20px;
-          bottom: -50px;
-          width: 220px;
-          height: 220px;
-          background: rgba(212,164,55,0.08);
-        }
-
-        .cs-cta-icon {
-          position: relative;
-          z-index: 2;
-          width: 56px;
-          height: 56px;
-          margin: 0 auto 20px;
-          border-radius: 18px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: rgba(15,163,163,0.12);
-          border: 1px solid rgba(15,163,163,0.24);
-          box-shadow: 0 12px 30px rgba(15,163,163,0.12);
-        }
-
-        .cs-cta-icon svg {
-          width: 23px;
-          height: 23px;
-          color: #0FA3A3;
-        }
-
-        .cs-cta-title {
-          position: relative;
-          z-index: 2;
-          margin: 0 0 14px;
-          font-size: clamp(1.75rem, 4vw, 2.45rem);
-          line-height: 1.12;
-          font-weight: 700;
-          color: white;
-          letter-spacing: -0.03em;
-        }
-
-        .cs-cta-title span {
-          background: linear-gradient(135deg, #0FA3A3 0%, #30d5d5 35%, #D4A437 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-        }
-
-        .cs-cta-desc {
-          position: relative;
-          z-index: 2;
-          max-width: 650px;
-          margin: 0 auto 32px;
-          color: rgba(226,232,240,0.82);
-          font-size: 14px;
-          line-height: 1.9;
-          font-weight: 400;
-        }
-
-        .cs-cta-actions {
-          position: relative;
-          z-index: 2;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 14px;
-          flex-wrap: wrap;
-        }
-
-        .cs-btn-primary,
-        .cs-btn-secondary {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          gap: 10px;
-          padding: 14px 26px;
-          border-radius: 15px;
-          text-decoration: none;
-          font-size: 13.5px;
-          font-weight: 600;
-          transition: all 0.3s ease;
-        }
-
-        .cs-btn-primary {
-          background: linear-gradient(135deg, #0FA3A3 0%, #0C8C8C 100%);
-          color: white;
-          box-shadow: 0 16px 34px rgba(15,163,163,0.20);
-          border: 1px solid rgba(15,163,163,0.35);
-        }
-
-        .cs-btn-primary:hover {
-          transform: translateY(-3px);
-          box-shadow: 0 20px 44px rgba(15,163,163,0.28);
-        }
-
-        .cs-btn-primary svg {
-          width: 15px;
-          height: 15px;
-          transition: transform 0.3s ease;
-        }
-
-        .cs-btn-primary:hover svg {
-          transform: translateX(4px);
-        }
-
-        .cs-btn-secondary {
-          background: rgba(255,255,255,0.08);
-          color: rgba(255,255,255,0.92);
-          border: 1px solid rgba(255,255,255,0.14);
-          backdrop-filter: blur(10px);
-        }
-
-        .cs-btn-secondary:hover {
-          background: rgba(255,255,255,0.12);
-          transform: translateY(-2px);
-        }
-
-        @media (max-width: 960px) {
-          .cs-top-stats {
-            grid-template-columns: repeat(2, 1fr);
-          }
-        }
-
-        @media (max-width: 640px) {
-          .cs-premium {
-            padding: 72px 0 84px;
-          }
-
-          .cs-wrap {
-            padding: 0 18px;
-          }
-
-          .cs-header {
-            margin-bottom: 28px;
-          }
-
-          .cs-top-stats {
-            gap: 10px;
-            margin-bottom: 42px;
-          }
-
-          .cs-top-stat {
-            padding: 18px 10px;
-            border-radius: 18px;
-          }
-
-          .cs-top-stat strong {
-            font-size: 20px;
-          }
-
-          .cs-card-inner {
-            padding: 24px 18px 20px;
-          }
-
-          .cs-card-id {
-            font-size: 42px;
-            right: 16px;
-            top: 16px;
-          }
-
-          .cs-title {
-            font-size: 19px;
-          }
-
-          .cs-text {
-            padding-left: 0;
-            font-size: 13px;
-          }
-
-          .cs-stats {
-            gap: 8px;
-          }
-
-          .cs-stat {
-            padding: 14px 8px 12px;
-            border-radius: 15px;
-          }
-
-          .cs-stat-value {
-            font-size: 16px;
-          }
-
-          .cs-stat-label {
-            font-size: 8px;
-          }
-
-          .cs-cta-box {
-            padding: 40px 20px;
-            border-radius: 26px;
-          }
-
-          .cs-cta-actions {
-            flex-direction: column;
-          }
-
-          .cs-btn-primary,
-          .cs-btn-secondary {
-            width: 100%;
-          }
-        }
-      `}</style>
-
-      <div className="cs-grid-pattern" />
-      <div className="cs-orb-1" />
-      <div className="cs-orb-2" />
-      <div className="cs-orb-3" />
-
-      <div className="cs-wrap">
-        <div ref={headerRef} className={`cs-header ${headerVisible ? "visible" : ""}`}>
-          <div className="cs-badge">
-            <Trophy />
-            Featured Case Studies
-          </div>
-          <h2>
-            Real Australian Business
-            <span>Growth Case Studies</span>
-          </h2>
-          <p>
-            From healthcare and home services to real estate and business websites,
-            these examples show how the <strong>right digital strategy</strong> creates
-            stronger traffic, better conversions and measurable business growth.
-          </p>
-        </div>
-
-        <div ref={topStatsRef} className="cs-top-stats">
-          {topStats.map((item, i) => {
-            const StatIcon = item.icon;
-            return (
-              <div key={i} className="cs-top-stat">
-                <div
-                  className="cs-top-stat-icon"
-                  style={{
-                    background: `${item.color}12`,
-                    color: item.color,
-                  }}
-                >
-                  <StatIcon />
-                </div>
-                <strong>
-                  <CountUp value={item.value} isVisible={topStatsVisible} />
-                </strong>
-                <span>{item.label}</span>
-              </div>
-            );
-          })}
-        </div>
-
-        <div className="cs-grid">
-          {caseStudies.map((item, index) => {
-            const Icon = item.icon;
-            const isCardVisible = visibleCards.includes(index);
-
-            return (
-              <div
-                key={item.id}
-                ref={(el) => (cardRefs.current[index] = el)}
-                className={`cs-card ${isCardVisible ? "visible" : ""}`}
-              >
-                <div className="cs-card-line" style={{ background: item.gradient }} />
-                <div className="cs-card-glow" style={{ background: item.accentSoft }} />
-
-                <div className="cs-card-inner">
-                  <div className="cs-card-id">{item.id}</div>
-
-                  <div className="cs-top">
-                    <div
-                      className="cs-icon-box"
-                      style={{
-                        background: item.accentLight,
-                        boxShadow: `0 10px 24px ${item.accentLight}`,
-                      }}
-                    >
-                      <Icon style={{ color: item.accentColor }} />
-                    </div>
-
-                    <div className="cs-meta">
-                      <div
-                        className="cs-industry"
-                        style={{
-                          background: item.accentLight,
-                          color: item.accentColor,
-                        }}
-                      >
-                        <span
-                          className="cs-industry-dot"
-                          style={{ background: item.accentColor }}
-                        />
-                        {item.industry}
-                      </div>
-                      <h3 className="cs-title">{item.business}</h3>
-                    </div>
-                  </div>
-
-                  <div className="cs-tags">
-                    {item.tags.map((tag) => (
-                      <span key={tag} className="cs-tag">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-
-                  <div className="cs-block">
-                    <div className="cs-label">
-                      <div
-                        className="cs-label-box"
-                        style={{ background: "rgba(239,68,68,0.08)" }}
-                      >
-                        <AlertCircle style={{ color: "#EF4444" }} />
-                      </div>
-                      <span>Challenge</span>
-                    </div>
-                    <p className="cs-text">{item.challenge}</p>
-                  </div>
-
-                  <div className="cs-block">
-                    <div className="cs-label">
-                      <div
-                        className="cs-label-box"
-                        style={{ background: "rgba(34,197,94,0.08)" }}
-                      >
-                        <Lightbulb style={{ color: "#22C55E" }} />
-                      </div>
-                      <span>Solution</span>
-                    </div>
-                    <p className="cs-text">{item.solution}</p>
-                  </div>
-
-                  <div className="cs-divider" />
-
-                  <div className="cs-results-head">
-                    <div className="cs-results-head-left">
-                      <BarChart3 />
-                      <span>Results Overview</span>
-                    </div>
-                    <div className="cs-results-chip">
-                      <CheckCircle2 />
-                      Verified Growth
-                    </div>
-                  </div>
-
-                  <div className="cs-stats">
-                    {item.stats.map((stat, idx) => {
-                      const StatIcon = stat.icon;
-                      return (
-                        <div key={idx} className="cs-stat">
-                          <div
-                            style={{
-                              position: "absolute",
-                              top: 0,
-                              left: 0,
-                              right: 0,
-                              height: 3,
-                              background: item.gradient,
-                            }}
-                          />
-                          <div
-                            className="cs-stat-icon"
-                            style={{ background: item.accentLight }}
-                          >
-                            <StatIcon style={{ color: item.accentColor }} />
-                          </div>
-                          <span className="cs-stat-value">
-                            <CountUp value={stat.value} isVisible={isCardVisible} />
-                          </span>
-                          <span className="cs-stat-label">{stat.label}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  <div className="cs-card-bar" style={{ background: item.gradient }} />
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
+    <div className="overflow-hidden">
+      <p className="text-[12px] font-medium text-slate-600 mb-3 tracking-[0.08em] uppercase">
+        {chartLabel}
+      </p>
+
+      <div className="overflow-hidden rounded-xl">
+        <ResponsiveContainer width="100%" height={210}>
+          {chartType === "bar" ? (
+            <BarChart data={chartData} barSize={56}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(148,163,184,0.25)" />
+              <XAxis dataKey="label" tick={TICK} tickLine={false} axisLine={false} />
+              <YAxis tick={TICK} tickLine={false} axisLine={false} />
+              <Tooltip contentStyle={TT} cursor={{ fill: `${accent}10` }} allowEscapeViewBox={{ x: false, y: false }} />
+              <Bar dataKey={chartKey} fill={barFill} radius={[10, 10, 0, 0]} />
+            </BarChart>
+          ) : chartType === "composed" ? (
+            <ComposedChart data={chartData}>
+              <defs>
+                <linearGradient id={areaId} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={accentDark} stopOpacity={0.22} />
+                  <stop offset="100%" stopColor={accentDark} stopOpacity={0.02} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(148,163,184,0.25)" />
+              <XAxis dataKey="label" tick={TICK} tickLine={false} axisLine={false} />
+              <YAxis tick={TICK} tickLine={false} axisLine={false} />
+              <Tooltip contentStyle={TT} allowEscapeViewBox={{ x: false, y: false }} />
+              <Area type="monotone" dataKey={chartKey} fill={`url(#${areaId})`} stroke="transparent" />
+              <Line type="monotone" dataKey={chartKey} stroke={accent} strokeWidth={2.6} dot={{ r: 5, fill: accentDark, stroke: "#ffffff", strokeWidth: 2 }} />
+            </ComposedChart>
+          ) : (
+            <AreaChart data={chartData}>
+              <defs>
+                <linearGradient id={areaId} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={accentDark} stopOpacity={0.22} />
+                  <stop offset="100%" stopColor={accentDark} stopOpacity={0.02} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(148,163,184,0.25)" />
+              <XAxis dataKey="label" tick={TICK} tickLine={false} axisLine={false} />
+              <YAxis tick={TICK} tickLine={false} axisLine={false} />
+              <Tooltip contentStyle={TT} allowEscapeViewBox={{ x: false, y: false }} />
+              <Area type="monotone" dataKey={chartKey} stroke={accent} strokeWidth={2.6} fill={`url(#${areaId})`} dot={{ r: 4, fill: accentDark, stroke: "#ffffff", strokeWidth: 2 }} />
+            </AreaChart>
+          )}
+        </ResponsiveContainer>
       </div>
-      <CtaSection 
-        title="Want Results Like These for Your Business?"
-        subtitle="Whether you're in healthcare, real estate or home services, we can build the right strategy for measurable long-term growth. Let's discuss your goals."
-        ctaText="Book Free Consultation"
-      />
+    </div>
+  );
+}
 
-    </section>
+/* ─── Individual Case Card ─── */
+function CaseCard({ cs, index }) {
+  const [open, setOpen] = useState(index === 0);
+
+  return (
+    <FadeIn delay={index * 0.07}>
+      <div
+        className="rounded-[32px] overflow-hidden border bg-white transition-all duration-500"
+        style={{
+          borderColor: open ? `${cs.accent}30` : "rgba(226,232,240,1)",
+          boxShadow: open ? "0 35px 100px rgba(15,23,42,0.12)" : "0 18px 60px rgba(15,23,42,0.10)",
+        }}
+      >
+        <div className="h-[3px] w-full" style={{ background: `linear-gradient(90deg, ${cs.accent}, ${cs.accentDark})` }} />
+
+        <button
+          onClick={() => setOpen(!open)}
+          className="w-full text-left p-7 md:p-10 flex items-center justify-between gap-5 group"
+          style={{ background: open ? `linear-gradient(135deg, ${cs.accent}10 0%, transparent 60%)` : undefined }}
+        >
+          <div className="flex items-center gap-5 min-w-0">
+            <div
+              className="relative flex h-20 w-20 md:h-[84px] md:w-[84px] shrink-0 items-center justify-center rounded-2xl overflow-hidden border bg-white shadow-sm"
+              style={{ borderColor: `${cs.accent}25` }}
+            >
+              <img
+                src={cs.logo}
+                alt={cs.name}
+                className="h-14 w-14 md:h-[60px] md:w-[60px] object-contain"
+              />
+            </div>
+
+            <div className="min-w-0">
+
+
+              {/* heading ko "extra bold" se normal किया */}
+              <h2 className="text-[18px] md:text-[22px] font-bold leading-[1.25] tracking-[-0.02em] text-[rgb(29,41,61)] transition-all duration-300 group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-[rgb(0,173,216)] group-hover:to-[rgb(0,183,166)] group-hover:bg-clip-text">
+                {cs.name}
+              </h2>
+            </div>
+          </div>
+
+          <motion.div
+            animate={{ rotate: open ? 180 : 0 }}
+            transition={{ duration: 0.28, ease: "easeInOut" }}
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border bg-white text-slate-600 group-hover:text-slate-900 transition-colors"
+            style={{ borderColor: open ? `${cs.accent}25` : "rgba(226,232,240,1)" }}
+          >
+            <ChevronDown className="h-5 w-5" />
+          </motion.div>
+        </button>
+
+        <AnimatePresence initial={false}>
+          {open && (
+            <motion.div
+              key="content"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
+              style={{ overflow: "hidden" }}
+            >
+              <div className="px-7 md:px-10 pb-10">
+                <div className="h-px mb-8 bg-slate-200" />
+
+                <div className="grid gap-7 xl:grid-cols-12">
+                  {/* LEFT */}
+                  <div className="xl:col-span-7 space-y-5 min-w-0">
+                    <InfoBlock icon={Zap} title="What We Did" accent={cs.accent}>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        {cs.did.map((d, i) => (
+                          <div key={i} className="flex items-start gap-2.5 min-w-0">
+                            <span className="mt-[10px] h-1.5 w-1.5 rounded-full shrink-0" style={{ background: cs.accent }} />
+                            {/* content ko halka sa bada किया */}
+                            <span className="text-[14px] md:text-[15px] text-slate-700 leading-[1.8] break-words">
+                              {d}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </InfoBlock>
+
+                    <InfoBlock icon={Activity} title="Our Process" accent={cs.accent}>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        {cs.process.map((p, i) => (
+                          <div key={i} className="flex items-start gap-3 min-w-0">
+                            <span
+                              className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-medium"
+                              style={{ background: `${cs.accent}16`, color: cs.accentDark }}
+                            >
+                              {String(i + 1).padStart(2, "0")}
+                            </span>
+                            <span className="text-[14px] md:text-[15px] text-slate-700 leading-[1.8] break-words">
+                              {p}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </InfoBlock>
+                  </div>
+
+                  {/* RIGHT */}
+                  <div className="xl:col-span-5 space-y-5 min-w-0">
+                    <InfoBlock icon={TrendingUp} title="Results Achieved" accent={cs.accent}>
+                      <div className="space-y-1">
+                        {cs.results.map((r, i) => (
+                          <ResultTag key={i} text={r} />
+                        ))}
+                      </div>
+                    </InfoBlock>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      {cs.stats.map((s, i) => (
+                        <Stat
+                          key={i}
+                          icon={s.icon}
+                          label={s.label}
+                          accent={cs.accent}
+                          value={
+                            s.value ? (
+                              s.value
+                            ) : (
+                              <>
+                                <CountUp end={s.countEnd} duration={2.4} enableScrollSpy scrollSpyOnce />
+                                {s.suffix}
+                              </>
+                            )
+                          }
+                        />
+                      ))}
+                    </div>
+
+                    <div className="rounded-2xl p-6 border border-slate-200 bg-white overflow-hidden shadow-[0_16px_50px_rgba(15,23,42,0.06)]">
+                      <MiniChart cs={cs} />
+                    </div>
+
+                    <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
+                      <Link
+                        to="/contact"
+                        className="group flex w-full items-center justify-center gap-2.5 rounded-2xl px-7 py-4 text-[15px] font-medium text-white shadow-lg transition-all duration-300"
+                        style={{ background: `linear-gradient(135deg, ${cs.accent}, ${cs.accentDark})` }}
+                      >
+                        Start Your Campaign
+                        <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+                      </Link>
+                    </motion.div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </FadeIn>
+  );
+}
+
+/* PAGE */
+export default function CaseStudy() {
+  useEffect(() => window.scrollTo(0, 0), []);
+
+  return (
+    <main className="relative min-h-screen overflow-x-hidden font-sans bg-white">
+      <Defs />
+
+      {/* Background grid + glow */}
+      <div className="pointer-events-none absolute inset-0 z-0">
+        <div className="absolute inset-0 bg-gradient-to-b from-sky-50/80 via-white to-white" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_-10%,rgba(14,165,233,0.12),transparent_50%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(245,158,11,0.08),transparent_40%)]" />
+
+        <div
+          className="absolute inset-0 opacity-[0.28]"
+          style={{
+            backgroundImage: `
+              linear-gradient(to right, rgba(14,165,233,0.06) 1px, transparent 1px),
+              linear-gradient(to bottom, rgba(14,165,233,0.06) 1px, transparent 1px)
+            `,
+            backgroundSize: "60px 60px",
+          }}
+        />
+
+        <div className="absolute -top-24 left-1/2 h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-sky-200/25 blur-[110px] pointer-events-none" />
+        <div className="absolute right-[10%] top-16 h-[180px] w-[180px] rounded-full bg-amber-200/20 blur-[90px] pointer-events-none" />
+      </div>
+
+      {/* HERO */}
+      <section className="relative z-10 pt-28 pb-12">
+        <div className="mx-auto max-w-6xl px-6 text-center">
+          <FadeIn>
+            <div className="mb-6 inline-flex items-center gap-2.5 rounded-full border border-blue-200 bg-white/70 px-5 py-2.5 backdrop-blur">
+              <Award className="h-4 w-4 text-blue-700" />
+              <span className="text-[12px] font-medium tracking-[0.18em] text-slate-700 uppercase">
+                Proven Client Results
+              </span>
+            </div>
+          </FadeIn>
+
+          {/* heading ko extra-bold se normal/balanced किया */}
+          <FadeIn delay={0.08}>
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-slate-900 mb-4 leading-[1.1]">
+              Real Campaigns.{" "}
+              <span className="bg-gradient-to-r from-sky-500 to-emerald-500 bg-clip-text text-transparent">
+                Extraordinary Results.
+              </span>
+            </h1>
+          </FadeIn>
+
+          <FadeIn delay={0.14}>
+            <p className="mx-auto mb-8 max-w-2xl text-[16px] leading-[1.9] text-slate-600">
+              Explore how we’ve helped businesses scale their digital presence, multiply leads and drive growth.
+            </p>
+          </FadeIn>
+
+          <FadeIn delay={0.2}>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+                <Link
+                  to="/contact"
+                  className="group inline-flex items-center gap-2.5 rounded-2xl bg-[rgb(29,41,61)] px-7 py-4 text-[15px] font-medium text-white shadow-lg shadow-slate-900/20 transition-all duration-300 hover:bg-[rgb(22,32,48)] hover:shadow-slate-900/30"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  Get Free Strategy Call
+                  <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+                </Link>
+              </motion.div>
+
+
+            </div>
+          </FadeIn>
+        </div>
+      </section>
+
+      {/* CASE CARDS */}
+      <section className="relative z-10 pb-20">
+        <div className="mx-auto max-w-7xl px-6 space-y-6">
+          {CASES.map((cs, i) => (
+            <CaseCard key={cs.id} cs={cs} index={i} />
+          ))}
+        </div>
+      </section>
+
+      {/* FINAL CTA */}
+      <section className="relative z-10 py-16 px-6">
+        <div className="mx-auto max-w-5xl">
+          <FadeIn>
+            <div className="relative overflow-hidden rounded-[36px] p-10 md:p-16 text-center border border-blue-200 bg-white/75 backdrop-blur shadow-[0_25px_90px_rgba(15,23,42,0.12)]">
+              <div
+                className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 h-72 w-72 rounded-full opacity-35"
+                style={{ background: "radial-gradient(ellipse, rgba(37,99,235,0.25), transparent 70%)" }}
+              />
+
+              <div className="relative z-10">
+                <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-white/70 px-4 py-2">
+                  <Zap className="h-4 w-4 text-blue-700" />
+                  <span className="text-[12px] font-medium tracking-[0.18em] text-slate-700 uppercase">
+                    Ready to Scale?
+                  </span>
+                </div>
+
+                <div className="relative text-center">
+
+                  <h2 className="mb-4 text-3xl md:text-5xl font-bold tracking-tight text-slate-900 leading-[1.1]">
+                    Want Results Like These{" "}
+                    <span className="block mt-2 bg-gradient-to-r from-[rgb(0,173,216)] to-[rgb(0,183,166)] bg-clip-text text-transparent">
+                      For Your Business?
+                    </span>
+                  </h2>
+
+                  <p className="mx-auto mb-10 max-w-2xl text-[17px] leading-[1.9] text-slate-600">
+                    Book a free growth consultation and let’s build a strategy that
+                    generates more leads, higher conversions, and sustainable revenue growth.
+                  </p>
+
+                  <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+                    <Link
+                      to="/contact"
+                      className="group inline-flex items-center gap-3 rounded-2xl bg-[rgb(29,41,61)] px-8 py-4 text-[15px] font-semibold text-white shadow-[0_10px_30px_rgba(29,41,61,0.25)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_15px_40px_rgba(29,41,61,0.35)]"
+                    >
+                      Book Free Growth Consultation
+                      <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1.5" />
+                    </Link>
+                  </motion.div>
+
+                </div>
+
+
+              </div>
+            </div>
+          </FadeIn>
+        </div>
+      </section>
+    </main>
   );
 }
